@@ -137,8 +137,11 @@ public:
 					outputChunkConsumed = 0;
 				}
 
-				double proportionRemaining = 1. - sampleCounter / std::round(outputSampleCount);
-				const auto position = inputBuffer.endPosition() - inputBuffer.stretcher.maxInputFrameCount() / 2 - proportionRemaining * inputSampleCount;
+				[[maybe_unused]] const double proportionRemaining = 1. - sampleCounter / std::round(outputSampleCount);
+				const double proportionRemainingDenominator = std::round(outputSampleCount);
+				const double proportionRemainingNumerator = proportionRemainingDenominator - sampleCounter;
+
+				const auto position = inputBuffer.endPosition() - inputBuffer.stretcher.maxInputFrameCount() / 2 - inputSampleCount * proportionRemainingNumerator / proportionRemainingDenominator;
 				request.reset = !(position > request.position);
 				request.position = position;
 				inputBuffer.inputChunk = inputBuffer.stretcher.specifyGrain(request);
