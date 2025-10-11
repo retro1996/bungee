@@ -181,6 +181,8 @@ struct Cache
 
 	inline void forward(int log2TransformLength, const Eigen::Ref<const Eigen::ArrayXXf> &t, Eigen::Ref<Eigen::ArrayXXcf> f) const
 	{
+		const Assert::FloatingPointExceptions floatingPointExceptions(FE_INEXACT | FE_UNDERFLOW);
+
 		BUNGEE_ASSERT1(t.cols() == t.cols());
 		BUNGEE_ASSERT1(t.cols() == 1 || !t.IsRowMajor);
 		BUNGEE_ASSERT1(f.cols() == 1 || !f.IsRowMajor);
@@ -193,6 +195,8 @@ struct Cache
 
 	inline void inverse(int log2TransformLength, Eigen::Ref<Eigen::ArrayXXf> t, const Eigen::Ref<const Eigen::ArrayXXcf> &f) const
 	{
+		const Assert::FloatingPointExceptions floatingPointExceptions(FE_INEXACT | FE_UNDERFLOW);
+
 		BUNGEE_ASSERT1(t.cols() == t.cols());
 		BUNGEE_ASSERT1(t.cols() == 1 || !t.IsRowMajor);
 		BUNGEE_ASSERT1(f.cols() == 1 || !f.IsRowMajor);

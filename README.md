@@ -126,8 +126,8 @@ while (true)
 ## Dependencies
 
 The Bungee library gratefully depends on:
-* Eigen C++ library for buffer management and mathematical operations on vectors and arrays 
-* KissFFT library for Fast Fourier Transforms
+* The Eigen C++ library for buffer management and mathematical operations on vectors and arrays
+* The PFFFT library for Fast Fourier Transforms
 
 The sample `bungee` command-line utility also uses:
 * cxxopts library for parsing command-line options

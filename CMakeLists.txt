@@ -37,8 +37,8 @@ target_compile_definitions(bungee_library PRIVATE
   $<$<CONFIG:Debug>:EIGEN_RUNTIME_NO_MALLOC=1>
 )
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp PROPERTIES COMPILE_DEFINITIONS BUNGEE_VERSION=\"${BUNGEE_VERSION}\")
-target_compile_options(bungee_library PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-fwrapv>)
-target_link_libraries(bungee_library PRIVATE kissfft)
+target_compile_options(bungee_library PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang>:-fwrapv>)
+target_link_libraries(bungee_library PRIVATE pffft)
 if (ANDROID)
   target_link_libraries(bungee_library PRIVATE log)
 endif()
@@ -53,18 +53,12 @@ set_target_properties(bungee_executable PROPERTIES
   INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}"
 )
 
-# KissFFT build
-set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
-set(KISSFFT_PKGCONFIG OFF CACHE INTERNAL "" FORCE)
-set(KISSFFT_STATIC ON CACHE INTERNAL "" FORCE)
-set(KISSFFT_TEST OFF CACHE INTERNAL "" FORCE)
-set(KISSFFT_TOOLS OFF CACHE INTERNAL "" FORCE)
-add_subdirectory(submodules/kissfft EXCLUDE_FROM_ALL)
-
-CHECK_CXX_COMPILER_FLAG("-Wno-cast-align" SUPPORTS_WNO_CAST_ALIGN)
-if(SUPPORTS_WNO_CAST_ALIGN)
-  target_compile_options(kissfft PRIVATE -Wno-cast-align)
-endif()
+# PFFFT as a static library
+add_library(pffft EXCLUDE_FROM_ALL STATIC
+  submodules/pffft/pffft.c
+  submodules/pffft/fftpack.c
+)
+target_compile_options(pffft PRIVATE -ffast-math -fno-finite-math-only -fno-exceptions)
 
 # Installation
 if (BUNGEE_BUILD_SHARED_LIBRARY)

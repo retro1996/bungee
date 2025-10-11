@@ -4,66 +4,64 @@
 #include "Fourier.h"
 #include "Assert.h"
 
-#include "kissfft/kiss_fftr.h"
-
+#include "../submodules/pffft/pffft.h"
 namespace Bungee::Fourier {
 
-#ifndef BUNGEE_USE_KISS_FFT
-#	define BUNGEE_USE_KISS_FFT 1
+#ifndef BUNGEE_USE_PFFFT
+#	define BUNGEE_USE_PFFFT 1
 #endif
 
-#if BUNGEE_USE_KISS_FFT
+#if BUNGEE_USE_PFFFT
 
-struct Kiss
+namespace {
+
+struct Pffft
 {
-	struct KernelBase
+	struct Kernel
 	{
-		void *implementation;
-		~KernelBase();
-	};
+		void *p;
 
-	template <bool isInverse>
-	struct Kernel :
-		KernelBase
-	{
 		Kernel(int log2TransformLength);
+		~Kernel();
 
 		void forward(int log2TransformLength, float *t, std::complex<float> *f) const;
 		void inverse(int log2TransformLength, float *t, std::complex<float> *f) const;
 	};
 
-	typedef Kernel<false> Forward;
-	typedef Kernel<true> Inverse;
+	typedef Kernel Forward;
+	typedef Kernel Inverse;
 };
 
-template <bool isInverse>
-Kiss::Kernel<isInverse>::Kernel(int log2TransformLength) :
-	Kiss::KernelBase{kiss_fftr_alloc(1 << log2TransformLength, isInverse, nullptr, nullptr)}
+Pffft::Kernel::Kernel(int log2TransformLength) :
+	p(pffft_new_setup(1 << log2TransformLength, PFFFT_REAL))
 {
 }
 
-Kiss::KernelBase::~KernelBase()
+Pffft::Kernel::~Kernel()
 {
-	KISS_FFT_FREE(implementation);
+	pffft_destroy_setup((PFFFT_Setup *)p);
 }
 
-template <bool isInverse>
-void Kiss::Kernel<isInverse>::forward(int, float *t, std::complex<float> *f) const
+void Pffft::Kernel::forward(int log2TransformLength, float *t, std::complex<float> *f) const
 {
-	static_assert(sizeof(*f) == sizeof(kiss_fft_cpx));
-	BUNGEE_ASSERT1(!isInverse);
-	kiss_fftr((kiss_fftr_cfg)implementation, t, (kiss_fft_cpx *)f);
+	pffft_transform_ordered((PFFFT_Setup *)p, t, (float *)f, nullptr, PFFFT_FORWARD);
+	const auto transformLength = 1 << log2TransformLength;
+	f[transformLength / 2] = f[0].imag();
+	f[0].imag(0.f);
 }
 
-template <bool isInverse>
-void Kiss::Kernel<isInverse>::inverse(int, float *t, std::complex<float> *f) const
+void Pffft::Kernel::inverse(int log2TransformLength, float *t, std::complex<float> *f) const
 {
-	static_assert(sizeof(*f) == sizeof(kiss_fft_cpx));
-	BUNGEE_ASSERT1(isInverse);
-	kiss_fftri((kiss_fftr_cfg)implementation, (kiss_fft_cpx *)f, t);
+	const auto transformLength = 1 << log2TransformLength;
+	const auto backup = f[0].imag();
+	f[0].imag(f[transformLength / 2].real());
+	pffft_transform_ordered((PFFFT_Setup *)p, (float *)f, t, nullptr, PFFFT_BACKWARD);
+	f[0].imag(backup);
 }
 
-typedef Cache<Kiss, 16> Implementation;
+} // namespace
+
+typedef Cache<Pffft, 16> Implementation;
 
 Transforms::Transforms()
 {
