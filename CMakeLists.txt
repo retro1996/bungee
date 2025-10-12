@@ -94,7 +94,16 @@ if (BUNGEE_BUILD_SHARED_LIBRARY)
   )
 
 get_property(BUNGEE_LIBRARY_OUTPUT_NAME TARGET bungee_library PROPERTY OUTPUT_NAME)
+
+if (APPLE)
+  set(PKGCONFIG_LINK_PATH -F)
+  set(PKGCONFIG_LINK_FLAG "-framework ")
+else()
+  set(PKGCONFIG_LINK_PATH -L)
+  set(PKGCONFIG_LINK_FLAG "-I")
+endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libbungee.pc.in ${CMAKE_CURRENT_BINARY_DIR}/libbungee.pc @ONLY)
+
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libbungee.pc DESTINATION ${CMAKE_INSTALL_PREFIX}/${BUNGEE_PRESET}/pkgconfig)
 
 endif()
