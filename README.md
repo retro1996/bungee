@@ -5,16 +5,19 @@ Bungee is a real-time library for stretching audio. It can:
 * Adjust pitch, or transpose, audio without affecting playback speed
 * Or any combination of pitch and playhead position manipulation.
 
-Bungee is unique in its controllability, allowing continually changing pitch and position with seamless support of zero and negative playback speeds. So it can be used for a "smooth scrub" or for rendering life-like audio for slow-motion videos.
+Bungee is unique in its controllability, allowing continually changing pitch and position with seamless support of zero and negative playback speeds. So it can be used for a "smooth scrub" or for rendering lifelike audio for slow-motion videos.
 
 ## Features
 
 * Simple, fast, with good quality audio output (hear some [comparisons](https://bungee.parabolaresearch.com/compare-audio-stretch-tempo-pitch-change.html) with other approaches)
-* Resonably low latency (of the order of 20ms for speed and pitch controls and 40ms from audio input to output)
+* Reasonably low latency (of the order of 20ms for speed and pitch controls and 40ms from audio input to output)
 * Frequency-domain phase-vocoder-based algorithm
 * Modern C++ for clean and resilient code
 * Static library with a command-line utility that operates on WAV files
-* Permissively licensed under MPL-2
+
+## License
+
+Bungee is permissively licensed under the Mozilla Public License Version 2.0.
 
 ## Getting started
 
@@ -38,7 +41,7 @@ After a successful build, run the bungee executable
 
 ## Using pre-built Bungee
 
-By means of GitHub Actions and CMake Presets, every new tag on this repository is automatically built into a release. The release contains Bungee built as a shared library together with headers, sample code and a sample command-line executable that uses the shared library. The release supports common platforms including Linux, Windows, MacOS, Android and iOS.
+Every commit pushed to this repo's main branch is automatically tagged and built into a release. Each release contains Bungee built as a shared library together with headers, sample code and a sample command-line executable that uses the shared library. Releases support common platforms including Linux, Windows, MacOS, Android and iOS.
 
 ## Using Bungee from your own code
 
@@ -76,7 +79,7 @@ stretcher.preroll(request);
 
 ### Granular loop
 
-`Stretcher`'s processing functions are typically called from within a loop, each iteration of which corresponds to a grain of audio. For each grain, the functions `Stretcher<Basic>::specifiyGrain`, `Stretcher<Basic>::analyseGain` and `Stretcher<Basic>::synthesiseGrain` should be called in sequence.
+`Stretcher`'s processing functions are typically called from within a loop, each iteration of which corresponds to a grain of audio. For each grain, the functions `Stretcher<Basic>::specifyGrain`, `Stretcher<Basic>::analyseGain` and `Stretcher<Basic>::synthesiseGrain` should be called in sequence.
 ```C++
 while (true)
 {
@@ -88,7 +91,7 @@ while (true)
 
     // ...
     // Examine inputChunk and retrieve the segment of input audio that the stretcher requires here.
-    // Set data and channelStride to point to the input data.
+    // Set data and channelStride to point to the required segment of input data.
     // ...
 
     stretcher.analyseGrain(data, channelStride);
@@ -107,7 +110,7 @@ while (true)
 
 ### Things to note
 
-* Bungee is well tuned for stereo and mono operation at sample rates of 44.1kHz and 48kHz. In principle, though, any practical sample rate and number of audio channels are supported.
+* Bungee is most commonly used for stereo and mono operation at sample rates of 44.1kHz and 48kHz. In principle, though, any practical sample rate and number of audio channels are supported.
 
 * `Request::position` is a timestamp, it defines the grain centre point in terms of an input audio frame offset. It is the primary control for speed adjustments and is also the driver for seek and scrub operations. The caller is responsible for deciding  `Request::position` for each grain. 
 
@@ -119,7 +122,7 @@ while (true)
 
 * Bungee works with 32-bit floating point audio samples and expects sample values in the range -1 to +1 on both input and output. The algorithm performs no clipping.
 
-* When configured for 1x speed and no pitch adjustment, the difference between input and output signals should be very small: rounding errors only.
+* When configured for 1x speed and no pitch adjustment, the difference between input and output signals should be small: minor windowing discrepencies only.
 
 * Any special or non-numeric float values such as NaN and inf within the input audio may disrupt or cause loss of output audio.
 
@@ -134,16 +137,24 @@ The sample `bungee` command-line utility also uses:
 
 See this repo's [.gitmodules](.gitmodules) for versioned links to these projects.
 
+## Support
+
+Please use Github issues to report any problems and to suggest possible improvements to Bungee.
+
 ## Bungee Pro
 
-Bungee Pro is a closed-source commercial audio library built on Bungee's API and core philosophy. It uses novel algorithms for sharp and clear professional-grade audio and runs at least as fast as Bungee, thanks to platform-specific performance optimisations.
+Bungee Pro is a closed-source commercial product aimed to offer a seamless upgrade path from this open-source project. It uses novel algorithms for sharp and clear professional-grade audio and runs at least as fast as Bungee, thanks to platform-specific performance optimisations.
 
-Try Bungee Pro [now in your browser](https://bungee.parabolaresearch.com/change-audio-speed-pitch.html), see a [comparison](https://bungee.parabolaresearch.com/compare-audio-stretch-tempo-pitch-change.html) with other techniques and consider licensing if your app would benefit from:
-* Powerful, AI-enabled stretch algorithms adaptive to all genres of speech, music and sound with subjective transparency up to infinite time stretch
-* Novel frequency- and time-domain processing for crisp transients and presevation of tonal envelope, vocal and instrumental timbre
+Whilst open-source Bungee strives to be the best open-source audio time stretch algorithm, the goal of Bungee Pro is to be the best algorithm available to license commercially.
+
+Try Bungee Pro [now in your browser](https://bungee.parabolaresearch.com/change-audio-speed-pitch.html), see a [comparison](https://bungee.parabolaresearch.com/compare-audio-stretch-tempo-pitch-change.html) with other techniques.
+
+Consider licensing Bungee Pro for:
+* Powerful stretch algorithms adaptive to all genres of speech, music and sound with subjective transparency up to infinite time stretch
+* Novel processing techniques that deliver crisp transients and preserve vocal and instrumental timbre
 * Performance optimisations for:
-    * Web AudioWorklet with SIMD128 Web Assembler
-    * Arm 64-bit for Android, iOS and MacOS
-    * x86-64 for Linux, Windows and MacOS
+    * Web AudioWorklet with SIMD128 WebAssembly
+    * Arm NEON for Android, iOS and MacOS
+    * x86-64 SIMD for Linux, Windows and MacOS
 * A ready-to-use Web Audio implementation 
-
+* Professional support
