@@ -38,6 +38,8 @@ struct Options :
 		add_options() //
 			("input", "input WAV filename", cxxopts::value<std::string>()) //
 			("output", "output WAV filename", cxxopts::value<std::string>()) //
+			("start", "start time in seconds", cxxopts::value<double>()->default_value("+0")) //
+			("stop", "stop time in seconds", cxxopts::value<double>()->default_value("-0")) //
 			;
 		add_options(helpGroups.emplace_back("Sample rate")) //
 			("output-rate", "output sample rate, Hz, or 0 to match input sample rate", cxxopts::value<int>()->default_value("0")) //
@@ -247,23 +249,20 @@ struct Processor
 					fail("Please check your input file: it seems not to be a compatible WAV file (inconsistent at position 32)'");
 			}
 		}
-		wavData.resize(read<uint32_t>(&wavHeader[wavHeader.size() - 4]));
-		if (!inputFile.read(wavData.data(), wavData.size()))
-			fail("Please check your input file: there was a problem reading its audio data");
 
-		inputFrameCount = int(8 * wavData.size() / bitsPerSample / channelCount);
+		{
+			const auto frameStart = std::round(parameters["start"].as<double>() * sampleRates.input);
+			const auto frameStop = std::round(parameters["stop"].as<double>() * sampleRates.input);
 
-		inputChannelStride = inputFrameCount;
-		inputBuffer.resize(channelCount * inputChannelStride);
-
-		if (sampleFormat == 1 && bitsPerSample == 16)
-			readInputAudio<int16_t>();
-		else if (sampleFormat == 1 && bitsPerSample == 32)
-			readInputAudio<int32_t>();
-		else if (sampleFormat == 3 && bitsPerSample == 32)
-			readInputAudio<float>();
-		else
-			fail("Please check your input file: its sample format is not supported");
+			if (sampleFormat == 1 && bitsPerSample == 16)
+				readInputAudio<int16_t>(frameStart, frameStop);
+			else if (sampleFormat == 1 && bitsPerSample == 32)
+				readInputAudio<int32_t>(frameStart, frameStop);
+			else if (sampleFormat == 3 && bitsPerSample == 32)
+				readInputAudio<float>(frameStart, frameStop);
+			else
+				fail("Please check your input file: its sample format is not supported");
+		}
 
 		std::fill(wavData.begin(), wavData.end(), 0);
 
@@ -377,11 +376,28 @@ struct Processor
 	}
 
 	template <typename Sample>
-	void readInputAudio()
+	void readInputAudio(double frameStart, double frameStop)
 	{
+		wavData.resize(read<uint32_t>(&wavHeader[wavHeader.size() - 4]));
+		if (!inputFile.read(wavData.data(), wavData.size()))
+			fail("Please check your input file: there was a problem reading its audio data");
+
+		inputFrameCount = int(8 * wavData.size() / bitsPerSample / channelCount);
+
+		if (std::signbit(frameStart))
+			frameStart += inputFrameCount;
+		if (std::signbit(frameStop))
+			frameStop += inputFrameCount;
+
+		if (frameStart < 0 || frameStart >= inputFrameCount || frameStop < 0 || frameStop > inputFrameCount || frameStart >= frameStop)
+			fail("Please check your start/stop times: they are outside the range of the input audio");
+
+		inputChannelStride = inputFrameCount = int(frameStop - frameStart);
+		inputBuffer.resize(channelCount * inputChannelStride);
+
 		for (int i = 0; i < inputFrameCount; ++i)
 			for (int c = 0; c < channelCount; ++c)
-				inputBuffer[c * inputChannelStride + i] = toFloat(read<Sample>(&wavData[(i * channelCount + c) * sizeof(Sample)]));
+				inputBuffer[c * inputChannelStride + i] = toFloat(read<Sample>(&wavData[((i + frameStart) * channelCount + c) * sizeof(Sample)]));
 	}
 
 	template <typename Type>
