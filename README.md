@@ -156,7 +156,7 @@ Bungee::Stretcher<Bungee::Basic> stretcher(sampleRates, channelCount);
 stretcher.enableInstrumentation(true);
 
 // Instantiate a Stream object.
-Stream stream(stretcher, maxInputFrameCount, channelCount);
+Bungee::Stream<Bungee::Basic> stream(stretcher, maxInputFrameCount, channelCount);
 ```
 
 #### Streaming Loop
@@ -180,10 +180,10 @@ while (true)
     // Set these control variables as desired.
     const double speed=1., pitch=1.;
 
-	const double outputFrameCountIdeal = (inputSampleCount * sampleRates.output) / (speed * sampleRates.input);
+    const double outputFrameCountIdeal = (inputSampleCount * sampleRates.output) / (speed * sampleRates.input);
 
     // This call does the stretching.
-	const auto outputFrameCountActual = stream.process(inputChannelPointers.data(), outputChannelPointers.data(), inputSampleCount, outputFrameCountIdeal, pitch);
+    const auto outputFrameCountActual = stream.process(inputChannelPointers.data(), outputChannelPointers.data(), inputSampleCount, outputFrameCountIdeal, pitch);
 
     // ...
     // Place code to handle output of the time-stretched / pitch-shifted audio.
